@@ -3,7 +3,7 @@ FROM alpine:3.12
 ARG BUILD_CORES
 
 ARG NGINX_VER=1.19.0
-ARG PHP_VER=7.3.18
+ARG PHP_VER=7.4.5
 ARG LIBICONV_VERSION=1.16
 
 LABEL description="nginx + php image based on Alpine" \
@@ -105,7 +105,8 @@ ARG CUSTOM_BUILD_PKGS=" \
     openssl-dev \
     libbz2 \
     sqlite-dev \
-    imap-dev"
+    imap-dev \
+    oniguruma-dev"
 
 ARG CUSTOM_PKGS=" \
     freetype \
@@ -114,6 +115,7 @@ ARG CUSTOM_PKGS=" \
     bzip2-dev \
     icu \
     libpq \
+    oniguruma \
     c-client"
 
 COPY rootfs /

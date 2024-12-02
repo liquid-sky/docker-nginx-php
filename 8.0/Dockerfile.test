@@ -1,4 +1,4 @@
-FROM alpine:3.13
+FROM alpine:3.20.3
 
 ARG BUILD_CORES
 
@@ -82,8 +82,8 @@ ARG PHP_EXT_LIST=" \
     pgsql \
     ftp \
     exif \
-    gmp"
-
+    gmp \
+    imap"
 
 ARG CUSTOM_BUILD_PKGS=" \
     freetype-dev \
@@ -115,7 +115,6 @@ ARG CUSTOM_PKGS=" \
 COPY rootfs /
 
 RUN NB_CORES=${BUILD_CORES-$(getconf _NPROCESSORS_CONF)} \
-
 ### Packages installation
  && BUILD_DEPS=" \
     linux-headers \
@@ -174,20 +173,18 @@ RUN NB_CORES=${BUILD_CORES-$(getconf _NPROCESSORS_CONF)} \
 ### GNU Libiconv installation
  && cd /usr/src/libiconv-${LIBICONV_VERSION} \
  && ./configure --prefix=/usr/local \
- && make \
- && make install \
- && libtool --finish /usr/local/lib \
+ && make && make install && libtool --finish /usr/local/lib \
 
+### PHP installation
  && mv /usr/src/php-${PHP_VER} /usr/src/php \
  && cd /usr/src/php \
  && ./configure CFLAGS="-O3 -fstack-protector-strong" ${PHP_CONF} \
  && make -j ${NB_CORES} \
  && make install \
 
-## Strip, clean, install modules
+### Strip, clean, install modules
  && { find /usr/local/bin /usr/local/sbin -type f -perm +0111 -exec strip --strip-all '{}' + || true; } \
  && make clean \
-
  && chmod u+x /usr/local/bin/* /etc/s6.d/*/* \
  && docker-php-ext-install ${PHP_EXT_LIST} \
  && apk del ${BUILD_DEPS} \

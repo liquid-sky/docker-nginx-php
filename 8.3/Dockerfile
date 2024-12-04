@@ -2,9 +2,10 @@ FROM alpine:3.20
 
 ARG BUILD_CORES
 
-ARG NGINX_VER=1.27.2
-ARG PHP_VER=8.2.26
+ARG NGINX_VER=1.27.3
+ARG PHP_VER=8.3.14
 ARG LIBICONV_VERSION=1.16
+ARG IMAGICK_VERSION=3.7.0
 
 LABEL description="nginx + php image based on Alpine" \
       maintainer="Wonderfall <wonderfall@targaryen.house>" \
@@ -103,14 +104,19 @@ ARG CUSTOM_BUILD_PKGS=" \
     openssl-dev \
     libbz2 \
     sqlite-dev \
-    imap-dev"
+    imap-dev \
+    imagemagick \
+    jpegoptim \
+    libwebp \
+    libwebp-tools \
+    imagemagick-dev"
 
 ARG CUSTOM_PKGS=" \
     freetype \
     openldap \
+    libsodium \
     gmp \
     bzip2-dev \
-    libsodium \
     icu \
     libpq \
     c-client"
@@ -187,8 +193,21 @@ RUN NB_CORES=${BUILD_CORES-$(getconf _NPROCESSORS_CONF)} \
  && make -j ${NB_CORES} \
  && make install \
 
+# Build Imagick for PHP 8.3
+ && cd /tmp \
+ && curl -L -o /tmp/imagick.tar.gz https://github.com/Imagick/imagick/archive/tags/${IMAGICK_VERSION}.tar.gz \
+ && tar --strip-components=1 -xf /tmp/imagick.tar.gz \
+ && sed -i 's/php_strtolower/zend_str_tolower/g' imagick.c \
+ && phpize \
+ && ./configure \
+ && make \
+ && make install \
+ && echo "extension=imagick.so" > /php/conf.d/imagick.ini \
+ && rm -rf /tmp/* \
+
 ## Strip, clean, install modules
  && { find /usr/local/bin /usr/local/sbin -type f -perm +0111 -exec strip --strip-all '{}' + || true; } \
+ && cd /usr/src/php \
  && make clean \
 
  && chmod u+x /usr/local/bin/* /etc/s6.d/*/* \
